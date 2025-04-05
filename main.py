@@ -302,7 +302,8 @@ def contact():
             flash("Your message has been sent successfully!", "success")
             return render_template("contact.html", msg_sent=True, current_user=current_user)
         except Exception as e:
-            print(e)
+            # print(e)
+            app.logger.error("Error sending email: %s", e)
             flash("Failed to send your message. Please try again later.", "danger")
             return render_template("contact.html", msg_sent=False, current_user=current_user)
     return render_template("contact.html", current_user=current_user)
