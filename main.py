@@ -12,6 +12,10 @@ from werkzeug.security import generate_password_hash, check_password_hash
 # Import your forms from the forms.py
 from forms import CreatePostForm, RegisterForm, LoginForm, CommentForm
 import os
+from flask_mail import Mail, Message
+from dotenv import load_dotenv
+
+load_dotenv()
 
 '''
 Make sure the required packages are installed: 
@@ -40,7 +44,7 @@ def admin_only(function):
         return function(*args, **kwargs)
     return decorated_function
 
-# TODO: Configure Flask-Login
+# Configure Flask-Login
 login_manager = LoginManager()
 login_manager.init_app(app)
 
@@ -55,6 +59,19 @@ class Base(DeclarativeBase):
 app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DB_URI', 'sqlite:///posts.db')
 db = SQLAlchemy(model_class=Base)
 db.init_app(app)
+
+
+
+
+# Configure Flask-Mail
+app.config['MAIL_SERVER'] = 'smtp.gmail.com'
+app.config['MAIL_PORT'] = 587
+app.config['MAIL_USE_TLS'] = True
+app.config['MAIL_USERNAME'] = os.environ.get('MAIL_USERNAME')
+app.config['MAIL_PASSWORD'] = os.environ.get('MAIL_PASSWORD')
+app.config['MAIL_DEFAULT_SENDER'] = os.environ.get('MAIL_USERNAME')
+
+mail = Mail(app)
 
 
 # TODO: Create a User table for all your registered users.
@@ -111,7 +128,7 @@ with app.app_context():
     db.create_all()
 
 
-# TODO: Use Werkzeug to hash the user's password when creating a new user.
+#  Use Werkzeug to hash the user's password when creating a new user.
 @app.route('/register', methods=['GET', 'POST'])
 def register():
     form = RegisterForm()
@@ -175,7 +192,7 @@ def get_all_posts():
     return render_template("index.html", all_posts=posts, current_user=current_user)
 
 
-# TODO: Allow logged-in users to comment on posts
+# Allow logged-in users to comment on posts
 @app.route("/post/<int:post_id>", methods=['GET', 'POST'])
 def show_post(post_id):
     requested_post = db.get_or_404(BlogPost, post_id)
@@ -198,7 +215,7 @@ def show_post(post_id):
                            form=comment_form)
 
 
-# TODO: Use a decorator so only an admin user can create a new post
+# Use a decorator so only an admin user can create a new post
 @app.route("/new-post", methods=["GET", "POST"])
 @admin_only
 def add_new_post():
@@ -218,7 +235,7 @@ def add_new_post():
     return render_template("make-post.html", form=form, current_user=current_user)
 
 
-# TODO: Use a decorator so only an admin user can edit a post
+# Use a decorator so only an admin user can edit a post
 @app.route("/edit-post/<int:post_id>", methods=["GET", "POST"])
 @admin_only
 def edit_post(post_id):
@@ -241,7 +258,7 @@ def edit_post(post_id):
     return render_template("make-post.html", form=edit_form, is_edit=True, current_user=current_user)
 
 
-# TODO: Use a decorator so only an admin user can delete a post
+# Use a decorator so only an admin user can delete a post
 @app.route("/delete/<int:post_id>")
 @admin_only
 def delete_post(post_id):
@@ -256,8 +273,40 @@ def about():
     return render_template("about.html", current_user=current_user)
 
 
-@app.route("/contact")
+@app.route("/contact", methods=['GET', 'POST'])
 def contact():
+    if not current_user.is_authenticated:
+        flash('You need to be logged in to send a message, Please log in', 'danger')
+        return redirect(url_for('login'))
+
+    if request.method == 'POST':
+        name = current_user.name
+        email = current_user.email
+
+        phone = request.form.get('phone')
+        message = request.form.get('message')
+
+        msg = Message(
+            subject=f"Blog-site message from {name}",
+            sender=email,
+            recipients=[os.environ.get('MAIL_USERNAME')],
+            body=f"""
+            Name: {name}
+            Email: {email}
+            Phone: {phone}
+            
+            Message:
+            {message}
+            """
+        )
+        try:
+            mail.send(msg)
+            flash("Your message has been sent successfully!", "success")
+            return render_template("contact.html", msg_sent=True, current_user=current_user)
+        except Exception as e:
+            print(e)
+            flash("Failed to send your message. Please try again later.", "danger")
+            return render_template("contact.html", msg_sent=False, current_user=current_user)
     return render_template("contact.html", current_user=current_user)
 
 

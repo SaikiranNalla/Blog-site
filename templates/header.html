@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-bs-theme="light">
   <head>
     <meta charset="utf-8" />
     <meta
@@ -38,7 +38,16 @@
       href="{{ url_for('static', filename='css/styles.css') }}"
       rel="stylesheet"
     />
+<!--    for DarkMode Integration-->
+<!--    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">-->
     {% endblock %}
+<!--  JavaScript for darkmode toggle-->
+<!--      <script>-->
+<!--        function toggleTheme() {-->
+<!--            const currentTheme = document.documentElement.getAttribute('data-bs-theme');-->
+<!--            document.documentElement.setAttribute('data-bs-theme', currentTheme === 'dark' ? 'light' : 'dark');-->
+<!--        }-->
+<!--      </script>-->
   </head>
   <body>
     <!-- Navigation-->
@@ -81,6 +90,10 @@
             <li class="nav-item">
               <a class="nav-link px-lg-3 py-3 py-lg-4" href="{{ url_for('contact') }}">Contact</a>
             </li>
+<!--            <li class="nav-item">-->
+<!--              &lt;!&ndash; Added Toggle Dark Mode Button &ndash;&gt;-->
+<!--              <button id="theme-toggle" class="btn btn-outline-secondary" onclick="toggleTheme()">Dark Mode</button>-->
+<!--            </li>-->
           </ul>
         </div>
       </div>
