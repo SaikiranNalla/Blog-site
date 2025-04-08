@@ -6,13 +6,19 @@ from flask_gravatar import Gravatar
 from flask_login import UserMixin, login_user, LoginManager, current_user, logout_user
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy.orm import relationship, DeclarativeBase, Mapped, mapped_column
-from sqlalchemy import Integer, String, Text, ForeignKey
+from sqlalchemy import Integer, String, Text, ForeignKey, Date
 from functools import wraps
 from werkzeug.security import generate_password_hash, check_password_hash
 # Import your forms from the forms.py
 from forms import CreatePostForm, RegisterForm, LoginForm, CommentForm
 import os
 from flask_mail import Mail, Message
+
+from datetime import datetime
+
+# from dotenv import load_dotenv
+#
+# load_dotenv()
 
 
 '''
@@ -185,8 +191,12 @@ def logout():
 
 @app.route('/')
 def get_all_posts():
-    result = db.session.execute(db.select(BlogPost))
+    result = db.session.execute(db.select(BlogPost).order_by(BlogPost.date.asc()))
     posts = result.scalars().all()
+
+    # Sort posts by date (parsed from string) in descending order (newest first)
+    posts.sort(key=lambda post: datetime.strptime(post.date, "%B %d, %Y"), reverse=True)
+
     return render_template("index.html", all_posts=posts, current_user=current_user)
 
 
