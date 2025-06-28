@@ -6,24 +6,28 @@ from flask_gravatar import Gravatar
 from flask_login import UserMixin, login_user, LoginManager, current_user, logout_user
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy.orm import relationship, DeclarativeBase, Mapped, mapped_column
-from sqlalchemy import Integer, String, Text, ForeignKey
+from sqlalchemy import Integer, String, Text, ForeignKey, Date
 from functools import wraps
 from werkzeug.security import generate_password_hash, check_password_hash
 # Import your forms from the forms.py
 from forms import CreatePostForm, RegisterForm, LoginForm, CommentForm
 import os
 from flask_mail import Mail, Message
-
-from datetime import datetime
+from sqlalchemy import Date
+#from datetime import datetime, Date
 
 # from dotenv import load_dotenv
 #
 # load_dotenv()
 
+# Added these two lines to migrate the db while deploying in pythonanywhere with mysql db
+# from flask_migrate import Migrate
+
+# import pymysql
 
 '''
-Make sure the required packages are installed: 
-Open the Terminal in PyCharm (bottom left). 
+Make sure the required packages are installed:
+Open the Terminal in PyCharm (bottom left).
 
 On Windows type:
 python -m pip install -r requirements.txt
@@ -38,6 +42,8 @@ app = Flask(__name__)
 app.config['SECRET_KEY'] = os.environ.get('FLASK_KEY')
 ckeditor = CKEditor(app)
 Bootstrap5(app)
+
+
 
 
 def admin_only(function):
@@ -64,7 +70,8 @@ app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DB_URI', 'sqlite:///post
 db = SQLAlchemy(model_class=Base)
 db.init_app(app)
 
-
+# this is 2nd which is mentioned in line 23
+# migrate = Migrate(app, db)
 
 
 # Configure Flask-Mail
@@ -97,7 +104,8 @@ class BlogPost(db.Model):
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     title: Mapped[str] = mapped_column(String(250), unique=True, nullable=False)
     subtitle: Mapped[str] = mapped_column(String(250), nullable=False)
-    date: Mapped[str] = mapped_column(String(250), nullable=False)
+   # date: Mapped[str] = mapped_column(String(250), nullable=False)
+    date: Mapped[date] = mapped_column(Date, nullable=False)
     body: Mapped[str] = mapped_column(Text, nullable=False)
 
     # author: Mapped[str] = mapped_column(String(250), nullable=False)
@@ -162,7 +170,7 @@ def register():
     return render_template("register.html", form=form, current_user=current_user)
 
 
-# TODO: Retrieve a user from the database based on their email. 
+# TODO: Retrieve a user from the database based on their email.
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     form = LoginForm()
@@ -195,7 +203,8 @@ def get_all_posts():
     posts = result.scalars().all()
 
     # Sort posts by date (parsed from string) in descending order (newest first)
-    posts.sort(key=lambda post: datetime.strptime(post.date, "%B %d, %Y"), reverse=True)
+    # posts.sort(key=lambda post: datetime.strptime(post.date, "%B %d, %Y"), reverse=True)
+    posts.sort(key=lambda post: post.date, reverse=True)
 
     return render_template("index.html", all_posts=posts, current_user=current_user)
 
@@ -235,7 +244,8 @@ def add_new_post():
             body=form.body.data,
             img_url=form.img_url.data,
             author=current_user,
-            date=date.today().strftime("%B %d, %Y")
+           # date=date.today().strftime("%B %d, %Y")
+            date=date.today()
         )
         db.session.add(new_post)
         db.session.commit()
@@ -302,7 +312,7 @@ def contact():
             Name: {name}
             Email: {email}
             Phone: {phone}
-            
+
             Message:
             {message}
             """
